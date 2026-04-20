@@ -5,7 +5,7 @@ import { useNavigationStore } from '../store/navigationStore';
 import { useCourseSegments, useCoursePois } from '../hooks/useCourse';
 import { useRideTracking } from '../hooks/useRideTracking';
 import { navigationApi, ridesApi } from '../services/api';
-import { RouteMap } from '../components/RouteMap';
+import { NaverMap } from '../components/NaverMap';
 import { RideStatsPanel } from '../components/RideStatsPanel';
 import { MonoButton } from '../components/MonoButton';
 import { useRideStore } from '../store/rideStore';
@@ -120,7 +120,7 @@ export function RideScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={{ flex: 1 }}>
-        <RouteMap
+        <NaverMap
           currentLocation={
             current ? { latitude: current.lat, longitude: current.lng } : null
           }

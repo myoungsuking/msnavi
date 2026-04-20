@@ -32,13 +32,30 @@
     },
     "extra": {
       "apiBaseUrl": "${EXPO_PUBLIC_API_BASE_URL}",
-      "kakaoJsKey": "${EXPO_PUBLIC_KAKAO_JS_KEY}"
+      "kakaoJsKey": "${EXPO_PUBLIC_KAKAO_JS_KEY}",
+      "naverMapClientId": "${EXPO_PUBLIC_NAVER_MAP_CLIENT_ID}"
     },
     "plugins": [
       [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "라이딩 중 위치 정보를 사용합니다."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://repository.map.naver.com/archive/maven"
+            ]
+          }
+        }
+      ],
+      [
+        "@mj-studio/react-native-naver-map",
+        {
+          "client_id": "xznupp27b3"
         }
       ]
     ]

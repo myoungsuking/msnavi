@@ -6,8 +6,11 @@ import { NearbyList } from '../components/NearbyList';
 import { colors, spacing, typography } from '../theme';
 
 const TYPES: Array<{ id: string; label: string }> = [
-  { id: 'convenience_store', label: '편의점' },
+  { id: 'certification_center', label: '인증센터' },
   { id: 'restroom', label: '화장실' },
+  { id: 'water_station', label: '급수대' },
+  { id: 'air_pump', label: '공기주입기' },
+  { id: 'convenience_store', label: '편의점' },
   { id: 'restaurant', label: '식당' },
   { id: 'lodging', label: '숙소' },
   { id: 'cafe', label: '카페' },

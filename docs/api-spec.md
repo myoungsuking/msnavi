@@ -71,7 +71,7 @@
 | --- | --- | --- |
 | `lat` | ✅ | -90 ~ 90 |
 | `lng` | ✅ | -180 ~ 180 |
-| `type` | - | `certification_center` / `convenience_store` / `restroom` / `restaurant` / `lodging` / `cafe` / `bike_repair` / `shelter` |
+| `type` | - | 공식: `certification_center` / `restroom` / `water_station` / `air_pump` · 보강: `convenience_store` / `restaurant` / `cafe` / `lodging` / `bike_repair` / `shelter` |
 | `radius` | - | 미터 단위, 기본 2000 (50~20000) |
 | `source` | - | `db` / `kakao` / `auto`(기본). `auto`는 type에 따라 DB+Kakao 혼합 |
 

@@ -38,8 +38,10 @@ function formatDistance(m: number) {
 function translateType(t: string) {
   const map: Record<string, string> = {
     certification_center: '인증센터',
-    convenience_store: '편의점',
     restroom: '화장실',
+    water_station: '급수대',
+    air_pump: '공기주입기',
+    convenience_store: '편의점',
     restaurant: '식당',
     lodging: '숙소',
     cafe: '카페',

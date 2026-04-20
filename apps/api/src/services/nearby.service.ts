@@ -142,6 +142,8 @@ export async function searchNearby(q: NearbyQuery): Promise<NearbyItem[]> {
   const dbFirstTypes = new Set([
     'certification_center',
     'restroom',
+    'water_station',
+    'air_pump',
     'shelter',
     'bike_repair',
   ]);

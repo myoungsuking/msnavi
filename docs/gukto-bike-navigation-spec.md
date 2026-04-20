@@ -71,13 +71,15 @@
 
 ## 4. 외부 데이터 소스 정리
 
-### 공공데이터
-1. 행정안전부 자전거길 DB
-   - 자전거길 기본 구간 정보
-   - 인증센터 정보
-   - 주변시설 좌표 정보
+### 공공데이터 (확보 완료)
+1. **행정안전부 자전거길 공식 자료** — `/data/raw/`
+   - `gukto_routes.csv` (53,418 점, 42개 노선 polyline)
+   - `gukto_pois.csv` (1,133개: 인증센터/화장실/급수대/공기주입기)
+   - `route_codebook.xlsx` (ROAD_SN 1~46 ↔ 노선명)
+   - 인코딩: CP949
+   - 적재: `npm run import:official`
 
-2. 생활안전지도 자전거길 관련 정보
+2. 생활안전지도 자전거길 관련 정보 (확보 예정)
    - 사고지점
    - 안전시설 정보
 
@@ -126,11 +128,13 @@
 ## 6. 핵심 데이터 모델
 
 ## 6.1 course
-국토종주 전체 혹은 세부 코스 단위
+국토종주 전체 혹은 세부 코스 단위.
+공식 자료 적재 시 `road_sn`(행정안전부 ROAD_SN)을 유니크 키로 사용한다.
 
 ```sql
 CREATE TABLE course (
   id BIGSERIAL PRIMARY KEY,
+  road_sn INT,                   -- 행정안전부 공식 노선코드 (1~46)
   name VARCHAR(200) NOT NULL,
   description TEXT,
   total_distance_km NUMERIC(8,2),
@@ -138,6 +142,7 @@ CREATE TABLE course (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+CREATE UNIQUE INDEX uq_course_road_sn ON course(road_sn) WHERE road_sn IS NOT NULL;
 ```
 
 ## 6.2 course_segment
@@ -181,14 +186,19 @@ CREATE INDEX idx_poi_type ON poi(type);
 ```
 
 ### poi.type 예시
-- certification_center
-- convenience_store
-- restroom
-- restaurant
-- lodging
-- cafe
-- bike_repair
-- shelter
+공식 자료(행정안전부) 기준
+- `certification_center` (인증센터, 92개)
+- `restroom` (화장실, 793개)
+- `water_station` (급수대, 185개)
+- `air_pump` (공기주입기, 63개)
+
+외부 API/내부 보강
+- `convenience_store` (편의점, Kakao)
+- `restaurant` (식당, Kakao)
+- `lodging` (숙소, Kakao)
+- `cafe` (카페, Kakao)
+- `bike_repair` (자전거 수리)
+- `shelter` (쉼터)
 
 ## 6.4 ride_session
 사용자 주행 기록
@@ -859,3 +869,71 @@ EXPO_PUBLIC_API_BASE_URL=http://172.22.0.148:4000
 - Remote: `https://github.com/myoungsuking/msnavi.git`
 - 기본 브랜치: `main`
 - 토큰/민감정보는 커밋되지 않으며 `.gitignore`에 `git_info`, `.env` 등록됨
+
+---
+
+## 25. 공식 데이터 ETL (행정안전부 자전거길)
+
+### 25.1 파일 배치
+
+```
+data/raw/
+├─ gukto_routes.csv       # 노선 좌표 시퀀스 (CP949)
+├─ gukto_pois.csv         # 주변시설 (CP949)
+├─ route_codebook.xlsx    # ROAD_SN ↔ 노선명
+└─ README.md
+```
+
+### 25.2 스키마 매핑
+
+| 원본 | 대상 |
+| --- | --- |
+| `gukto_routes.csv` → `국토종주 자전거길`(ROAD_SN) | `course.road_sn` (upsert key) + 노선명(코드북) |
+| `gukto_routes.csv` 의 각 행 | `course_segment.geom` 의 LINESTRING 한 점 (seq순 정렬) |
+| `gukto_pois.csv` → `구분` | `poi.type` (매핑 아래) |
+| `gukto_pois.csv` → `이름/경도/위도` | `poi.name/lng/lat` |
+
+POI 타입 매핑
+- `인증센터` → `certification_center`
+- `화장실` → `restroom`
+- `급수대` → `water_station`
+- `공기주입기` → `air_pump`
+
+인증센터만 `이름`이 개별 명칭이고, 나머지 타입은 노선명("아라길" 등)이 들어있으므로
+`name` 필드는 `"급수대 (아라길)"` 형태로 생성하고, 원본은 `metadata.routeName`에 보관.
+
+### 25.3 실행
+
+```bash
+docker compose up -d          # postgres+redis 기동 (최초 기동 시 001_init, 003_extend 자동 실행)
+cd apps/api
+npm install
+npm run import:official       # data/raw/*.csv 읽어 DB 적재 (upsert)
+```
+
+### 25.4 적재 결과 (기대값)
+
+- course: **42** rows (ROAD_SN 1~46 중 "노선변경 미사용" 4개 제외)
+- course_segment: **42** rows (노선당 1개, `total_distance_km`는 `ST_Length` 로 자동 계산)
+- poi: **최대 1,133** rows (동일 type+name+좌표(소수 4자리) upsert)
+
+### 25.5 노선 코드북 (요약)
+
+| ROAD_SN | 노선명 |
+| --- | --- |
+| 1 | 아라자전거길 |
+| 2 | 한강종주자전거길 |
+| 3 | 남한강자전거길 |
+| 4 | 새재자전거길 |
+| 5 | 낙동강자전거길 |
+| 6 | 금강자전거길 |
+| 7 | 영산강자전거길 |
+| 8 | 북한강자전거길 |
+| 9 | 섬진강자전거길 |
+| 10 | 오천자전거길 |
+| 11 | 동해안(강원)자전거길 |
+| 12 | 동해안(경북)자전거길 |
+| 13 | 제주환상자전거길 |
+| 14~46 | 지역 자전거길(강릉/화천/옹진/파주/옥천/정읍/신안/경주/진도/완도/고흥/여수/군산/울릉/사천/남해/제주 등) |
+
+전체 매핑은 `apps/api/src/scripts/import-official.ts` 의 `ROUTE_CODEBOOK` 상수 참조.

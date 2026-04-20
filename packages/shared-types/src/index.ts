@@ -5,6 +5,8 @@ export interface LatLng {
 
 export interface Course {
   id: number;
+  /** 행정안전부 ROAD_SN (1~46). 내부 코스는 null */
+  road_sn?: number | null;
   name: string;
   description: string | null;
   total_distance_km: string | null;
@@ -26,9 +28,13 @@ export interface CourseSegment {
 }
 
 export type PoiType =
+  // 공식(행정안전부) 자료
   | 'certification_center'
-  | 'convenience_store'
   | 'restroom'
+  | 'water_station'
+  | 'air_pump'
+  // 내부/외부 API 보완
+  | 'convenience_store'
   | 'restaurant'
   | 'lodging'
   | 'cafe'

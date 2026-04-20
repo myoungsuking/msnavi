@@ -51,6 +51,19 @@ npm install
 npm run dev   # http://172.22.0.148:4000 (API_HOST/API_PORT 로 변경 가능)
 ```
 
+### 3-1) 공식 데이터 적재 (선택)
+
+행정안전부 자전거길 공식 자료(42개 노선 + 1,133개 POI)를 DB에 적재:
+
+```bash
+cd apps/api
+npm run import:official
+```
+
+- 입력: `data/raw/gukto_routes.csv`, `gukto_pois.csv` (CP949)
+- 동작: `course.road_sn` upsert / 노선당 LINESTRING 1개 `course_segment` / POI upsert
+- 자세한 내용은 [`data/raw/README.md`](data/raw/README.md) 및 스펙 문서 25장 참조
+
 ### 4) 모바일 앱 실행
 
 ```bash
@@ -86,7 +99,7 @@ npm run start       # Expo 개발 서버
 | `npm run api:dev` | API 개발 서버 |
 | `npm run api:build` | API TS 빌드 |
 | `npm run api:migrate` | 마이그레이션 재실행 |
-| `npm run api:seed` | 샘플 데이터 시드 |
+| `npm --workspace apps/api run import:official` | 행정안전부 공식 데이터 적재 |
 | `npm run mobile:start` | Expo 개발 서버 |
 
 ## API 개요

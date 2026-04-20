@@ -12,7 +12,7 @@
     "api:build": "npm --workspace apps/api run build",
     "api:start": "npm --workspace apps/api run start",
     "api:migrate": "npm --workspace apps/api run migrate",
-    "api:seed": "npm --workspace apps/api run seed",
+    "api:import": "npm --workspace apps/api run import:official",
     "mobile:start": "npm --workspace apps/mobile run start",
     "mobile:android": "npm --workspace apps/mobile run android",
     "mobile:ios": "npm --workspace apps/mobile run ios",

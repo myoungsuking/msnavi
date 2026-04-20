@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigationStore } from '../store/navigationStore';
 import { useNearbyPois } from '../hooks/useNearbyPois';
 import { NearbyList } from '../components/NearbyList';
@@ -31,16 +38,29 @@ export function NearbyScreen() {
 
   if (!current) {
     return (
-      <SafeAreaView style={styles.empty}>
-        <Text style={styles.emptyText}>
-          현재 위치를 가져올 수 없습니다. 라이딩 화면에서 위치 권한을 허용하세요.
-        </Text>
+      <SafeAreaView style={styles.empty} edges={['top']}>
+        <View style={styles.header}>
+          <Text style={styles.title}>주변</Text>
+        </View>
+        <View style={styles.emptyBody}>
+          <Text style={styles.emptyText}>
+            현재 위치를 가져올 수 없습니다.{'\n'}주행 화면에서 위치 권한을
+            허용하세요.
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.title}>주변</Text>
+        <Text style={styles.caption}>
+          반경 2km · 현재 위치 기준
+        </Text>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -75,20 +95,31 @@ export function NearbyScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  title: { ...typography.h2, color: colors.text },
+  caption: {
+    ...typography.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   tabs: {
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.divider,
+    paddingBottom: spacing.md,
   },
   tab: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 4,
+    borderRadius: 999,
     backgroundColor: colors.bg,
+    height: 34,
+    justifyContent: 'center',
   },
   tabActive: {
     backgroundColor: colors.bgInverse,
@@ -104,14 +135,18 @@ const styles = StyleSheet.create({
   },
   empty: {
     flex: 1,
+    backgroundColor: colors.bg,
+  },
+  emptyBody: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: colors.bg,
   },
   emptyText: {
     color: colors.textMuted,
     ...typography.body,
     textAlign: 'center',
+    lineHeight: 22,
   },
 });

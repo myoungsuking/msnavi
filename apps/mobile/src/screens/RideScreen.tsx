@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigationStore } from '../store/navigationStore';
 import { useCourseSegments, useCoursePois } from '../hooks/useCourse';
 import { useRideTracking } from '../hooks/useRideTracking';
@@ -110,7 +111,7 @@ export function RideScreen() {
 
   if (!courseId) {
     return (
-      <SafeAreaView style={styles.empty}>
+      <SafeAreaView style={styles.empty} edges={['top']}>
         <Text style={styles.emptyText}>홈에서 코스를 먼저 선택하세요.</Text>
       </SafeAreaView>
     );

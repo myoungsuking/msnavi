@@ -22,7 +22,7 @@ export function RouteMap({
   certificationCenters = [],
 }: Props) {
   const initial = currentLocation ??
-    routeCoords[0] ?? { latitude: 37.5665, longitude: 126.978 };
+    routeCoords[0] ?? { latitude: 37.5172, longitude: 127.0473 };
 
   return (
     <MapView

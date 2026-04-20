@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "국토종주 네비",
+    "slug": "msnavi",
+    "scheme": "msnavi",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#ffffff",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "라이딩 중 현재 위치와 경로를 안내하기 위해 위치 정보를 사용합니다.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "백그라운드 주행 추적을 위해 위치 정보를 사용합니다."
+      },
+      "bundleIdentifier": "com.msnavi.app"
+    },
+    "android": {
+      "package": "com.msnavi.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiBaseUrl": "${EXPO_PUBLIC_API_BASE_URL}",
+      "kakaoJsKey": "${EXPO_PUBLIC_KAKAO_JS_KEY}"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "라이딩 중 위치 정보를 사용합니다."
+        }
+      ]
+    ]
+  }
+}

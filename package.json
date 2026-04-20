@@ -1,0 +1,27 @@
+{
+  "name": "msnavi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "국토종주 전용 자전거 네비게이션 (모바일 앱 + API)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "api:dev": "npm --workspace apps/api run dev",
+    "api:build": "npm --workspace apps/api run build",
+    "api:start": "npm --workspace apps/api run start",
+    "api:migrate": "npm --workspace apps/api run migrate",
+    "api:seed": "npm --workspace apps/api run seed",
+    "mobile:start": "npm --workspace apps/mobile run start",
+    "mobile:android": "npm --workspace apps/mobile run android",
+    "mobile:ios": "npm --workspace apps/mobile run ios",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:reset": "docker compose down -v && docker compose up -d"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

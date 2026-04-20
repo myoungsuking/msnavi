@@ -8,10 +8,10 @@ import { NearbyScreen } from '../screens/NearbyScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { colors } from '../theme';
-import type { RootStackParamList } from './types';
+import type { RootStackParamList, TabParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 function Tabs() {
   return (

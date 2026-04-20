@@ -8,14 +8,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCourses } from '../hooks/useCourse';
 import { useNavigationStore } from '../store/navigationStore';
 import { colors, spacing, typography } from '../theme';
-import type { RootStackParamList } from '../navigation/types';
+import type { TabScreenProps } from '../navigation/types';
 import { MonoButton } from '../components/MonoButton';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = TabScreenProps<'Home'>;
 
 export function HomeScreen({ navigation }: Props) {
   const { data, isLoading, error, refetch } = useCourses();

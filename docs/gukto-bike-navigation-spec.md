@@ -937,3 +937,31 @@ npm run import:official       # data/raw/*.csv 읽어 DB 적재 (upsert)
 | 14~46 | 지역 자전거길(강릉/화천/옹진/파주/옥천/정읍/신안/경주/진도/완도/고흥/여수/군산/울릉/사천/남해/제주 등) |
 
 전체 매핑은 `apps/api/src/scripts/import-official.ts` 의 `ROUTE_CODEBOOK` 상수 참조.
+
+---
+
+## 26. 배포 이력 관리 (GitHub Deployments)
+
+### 26.1 개요
+- 실제 배포 대상: 테스트 서버 1대 `http://172.22.0.148:4000` (environment = `test`)
+- 워크플로우: `.github/workflows/deploy-test.yml`
+- 방법: GitHub Actions 내에서 **GitHub Deployments API** 를 직접 호출해
+  각 배포 시도의 `in_progress → success/failure` 상태를 기록
+- 확인 위치: 레포 메인 우측 Environments / Deployments 탭 / `gh api repos/.../deployments`
+
+### 26.2 트리거
+- `main` 에 push (문서만 변경된 경우 skip)
+- 수동 실행(`workflow_dispatch`) 시 `ref` 입력으로 임의 SHA/브랜치 재배포 가능 (rollback)
+
+### 26.3 현재 범위
+- ✅ 배포 이력 기록 (`test` 환경)
+- ✅ typecheck + build 검증 후 상태 결정
+- ⏳ 실제 SSH/docker 배포 단계는 placeholder — 시크릿/접근 정보 확보 후 연결
+
+### 26.4 이후 확장
+1. `DEPLOY_SSH_KEY / HOST / USER` 시크릿 등록 후 `Deploy step` 을 SSH 실제 배포로 교체
+2. `production` 환경 추가 및 required reviewers 로 수동 승인 게이트
+3. Docker 이미지 빌드 + GHCR push (이미지 기준 rollback)
+4. Slack/Discord 알림
+
+자세한 내용은 [`docs/deployments.md`](deployments.md) 참조.

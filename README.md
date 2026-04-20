@@ -112,6 +112,12 @@ npm run start       # Expo 개발 서버
 - `POST /api/navigation/progress`
 - `POST /api/rides/start` · `POST /api/rides/:id/track` · `POST /api/rides/:id/end` · `GET /api/rides/:id`
 
+## 배포 이력
+
+- `main` 에 push 되면 GitHub Actions 가 자동으로 **Deployment 레코드**를 생성합니다.
+- 레포 메인 페이지 우측 **Environments → `test`** 혹은 **Deployments 탭** 에서 시간순으로 확인.
+- 자세한 동작 방식/추후 실제 SSH 배포 연결 방법은 [`docs/deployments.md`](docs/deployments.md) 참조.
+
 ## 기술 스택
 
 - **Backend**: Node.js 20, Express 4, TypeScript, node-postgres(`pg`), ioredis, zod, helmet, morgan

@@ -1,0 +1,145 @@
+name: Deploy (test)
+
+# 테스트 서버(172.22.0.148) 대상 배포 이력 기록 워크플로우.
+# - push to main / 수동 실행 시 트리거
+# - typecheck + build 수행
+# - GitHub Deployments API 로 이력(in_progress → success/failure) 기록
+# - 실제 원격 배포 스크립트는 'Deploy step' 에 이후 추가 (현재는 placeholder)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: '배포할 ref (기본: 현재 main)'
+        required: false
+        default: ''
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+  actions: read
+
+jobs:
+  deploy:
+    name: Deploy to test (172.22.0.148)
+    runs-on: ubuntu-latest
+    environment:
+      name: test
+      url: http://172.22.0.148:4000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # -----------------------------------------------------------
+      # 1) 배포 레코드 생성 (in_progress)
+      # -----------------------------------------------------------
+      - name: Create deployment (in_progress)
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ref = context.payload.inputs?.ref || context.sha;
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref,
+              environment: 'test',
+              required_contexts: [],
+              auto_merge: false,
+              description: `Deploy ${ref.slice(0, 7)} to test (172.22.0.148)`,
+              transient_environment: false,
+              production_environment: false,
+            });
+
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.id,
+              state: 'in_progress',
+              log_url: runUrl,
+              environment_url: 'http://172.22.0.148:4000',
+              description: 'Build & deploy in progress',
+            });
+            core.setOutput('deployment_id', deployment.id);
+            core.info(`Deployment #${deployment.id} created`);
+
+      # -----------------------------------------------------------
+      # 2) Install + Typecheck + Build
+      # -----------------------------------------------------------
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck API
+        run: npm --workspace apps/api run typecheck
+
+      - name: Build API
+        run: npm --workspace apps/api run build
+
+      - name: Typecheck Mobile
+        run: npm --workspace apps/mobile run typecheck
+
+      # -----------------------------------------------------------
+      # 3) 실제 배포 단계 (placeholder)
+      #    SSH 접근 정보/시크릿이 준비되면 아래를 실제 배포로 교체.
+      #    예시: webfactory/ssh-agent 로 SSH 키 로드 후
+      #          ssh user@172.22.0.148 'cd /opt/msnavi && git pull && docker compose up -d --build'
+      # -----------------------------------------------------------
+      - name: Deploy step (placeholder)
+        run: |
+          echo "::notice title=Deploy placeholder::실제 배포 스크립트 미설정 상태"
+          echo "ref=${{ github.sha }}"
+          echo "env=test / http://172.22.0.148:4000"
+          echo "deployment_id=${{ steps.deployment.outputs.deployment_id }}"
+
+      # -----------------------------------------------------------
+      # 4) 결과에 따라 success / failure 업데이트
+      # -----------------------------------------------------------
+      - name: Mark deployment success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.deployment_id }},
+              state: 'success',
+              log_url: runUrl,
+              environment_url: 'http://172.22.0.148:4000',
+              description: 'Deployed to test successfully',
+            });
+
+      - name: Mark deployment failure
+        if: failure() && steps.deployment.outputs.deployment_id
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.deployment_id }},
+              state: 'failure',
+              log_url: runUrl,
+              description: 'Build or deploy failed. See logs.',
+            });

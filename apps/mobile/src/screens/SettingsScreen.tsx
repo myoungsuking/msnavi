@@ -9,11 +9,26 @@ export function SettingsScreen() {
   const gpsIntervalMs = useSettingsStore((s) => s.gpsIntervalMs);
   const battery = useSettingsStore((s) => s.batterySaverEnabled);
   const setBatterySaver = useSettingsStore((s) => s.setBatterySaver);
+  const voiceEnabled = useSettingsStore((s) => s.voiceEnabled);
+  const setVoiceEnabled = useSettingsStore((s) => s.setVoiceEnabled);
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>설정</Text>
+      </View>
+
+      <View style={styles.row}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.label}>음성 안내</Text>
+          <Text style={styles.sub}>턴 접근 시 500m / 200m / 50m 음성</Text>
+        </View>
+        <Switch
+          value={voiceEnabled}
+          onValueChange={setVoiceEnabled}
+          trackColor={{ false: colors.border, true: colors.bgInverse }}
+          thumbColor={colors.bg}
+        />
       </View>
 
       <View style={styles.row}>

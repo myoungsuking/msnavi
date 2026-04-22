@@ -54,6 +54,37 @@ export const env = {
   kakao: {
     restApiKey: process.env.KAKAO_REST_API_KEY ?? '',
   },
+
+  naver: {
+    mapClientId: process.env.NAVER_MAP_CLIENT_ID ?? '',
+    mapClientSecret: process.env.NAVER_MAP_CLIENT_SECRET ?? '',
+    // 구 NCP 콘솔 키면 'ncpClientId', 신규 AI·NAVER API 면 'ncpKeyId'.
+    // 네이버가 2024 년부터 신규 발급은 ncpKeyId 로 이관됨.
+    mapAuthParam: (process.env.NAVER_MAP_AUTH_PARAM ?? 'ncpKeyId') as
+      | 'ncpKeyId'
+      | 'ncpClientId',
+  },
+
+  security: {
+    /** HSTS max-age (seconds). 기본 180d. 0 이면 HSTS 미적용 */
+    hstsMaxAgeSec: toInt(process.env.HSTS_MAX_AGE_SEC, 60 * 60 * 24 * 180),
+    /** IP 해시용 솔트 — 절대 커밋 금지 */
+    ipHashSalt: process.env.IP_HASH_SALT ?? 'msnavi-default-salt-change-me',
+    /** 글로벌 RPS 상한 (초당, windowMs 내부 기준) */
+    globalRateLimit: toInt(process.env.RATE_LIMIT_GLOBAL, 120),
+    externalApiRateLimit: toInt(process.env.RATE_LIMIT_EXTERNAL, 30),
+    writeRateLimit: toInt(process.env.RATE_LIMIT_WRITE, 60),
+  },
+
+  admin: {
+    /** 관리자 API 키. 32+ 랜덤 문자열 권장. 비어있으면 관리자 라우트 전부 비활성. */
+    apiKey: process.env.ADMIN_API_KEY ?? '',
+    /** 관리자 접근 허용 IP 화이트리스트 (콤마 구분). 비어있으면 IP 제한 없음. */
+    allowIps: (process.env.ADMIN_ALLOW_IPS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  },
 } as const;
 
 export type Env = typeof env;

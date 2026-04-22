@@ -77,38 +77,63 @@ export function cumulativeDistancesMeters(poly: LatLng[]): number[] {
   return out;
 }
 
-/**
- * 점 p를 polyline 위 최근접 지점으로 스냅하고,
- * 시작점으로부터의 누적 거리(미터), 이탈거리(미터)를 반환.
- */
-export function snapToPolyline(
-  p: LatLng,
-  poly: LatLng[],
-): {
+export interface SnapResult {
   snapped: LatLng;
   progressMeters: number;
   totalMeters: number;
   offRouteMeters: number;
   segmentIndex: number;
+  /** 선분 tangent bearing (진북 기준 시계방향, 0~360). 경로 진행방향을 의미. */
+  bearingDeg: number;
+}
+
+export interface SnapOptions {
+  /**
+   * 직전 샘플의 segmentIndex. 주어지면 `fromSegmentIndex ± windowK` 내에서만 먼저 탐색하여 O(K) 로 스냅.
+   * 윈도우 내 최단거리가 `offRouteFallbackM` 보다 크면 full-scan 으로 fallback.
+   */
+  fromSegmentIndex?: number;
+  /** 로컬 윈도우 반지름(선분 수). 기본 50. */
+  windowK?: number;
+  /** 윈도우 내 최단거리가 이 값보다 크면 full-scan fallback. 기본 100m. */
+  offRouteFallbackM?: number;
+}
+
+function segmentBearing(a: LatLng, b: LatLng): number {
+  const toR = (d: number) => (d * Math.PI) / 180;
+  const φ1 = toR(a.lat);
+  const φ2 = toR(b.lat);
+  const Δλ = toR(b.lng - a.lng);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+/**
+ * polyline 상 특정 선분 범위에 대해 최근접 스냅을 찾는다 (내부 유틸).
+ */
+function snapInRange(
+  p: LatLng,
+  poly: LatLng[],
+  cum: number[],
+  lo: number,
+  hi: number,
+): {
+  dist: number;
+  snapped: LatLng;
+  progress: number;
+  segIdx: number;
+  bearing: number;
 } {
-  if (poly.length < 2) {
-    return {
-      snapped: poly[0] ?? p,
-      progressMeters: 0,
-      totalMeters: 0,
-      offRouteMeters: poly[0] ? haversineMeters(p, poly[0]) : 0,
-      segmentIndex: 0,
-    };
-  }
-  const cum = cumulativeDistancesMeters(poly);
-  const totalMeters = cum[cum.length - 1];
-
   let bestDist = Number.POSITIVE_INFINITY;
-  let bestSnap: LatLng = poly[0];
-  let bestProgress = 0;
-  let bestSegIdx = 0;
+  let bestSnap: LatLng = poly[lo];
+  let bestProgress = cum[lo];
+  let bestSegIdx = lo;
+  let bestBearing = 0;
 
-  for (let i = 0; i < poly.length - 1; i++) {
+  for (let i = lo; i < hi; i++) {
     const { point, distanceMeters, t } = closestPointOnSegment(p, poly[i], poly[i + 1]);
     if (distanceMeters < bestDist) {
       bestDist = distanceMeters;
@@ -116,14 +141,72 @@ export function snapToPolyline(
       const segLen = cum[i + 1] - cum[i];
       bestProgress = cum[i] + t * segLen;
       bestSegIdx = i;
+      bestBearing = segmentBearing(poly[i], poly[i + 1]);
     }
   }
 
   return {
+    dist: bestDist,
     snapped: bestSnap,
-    progressMeters: bestProgress,
+    progress: bestProgress,
+    segIdx: bestSegIdx,
+    bearing: bestBearing,
+  };
+}
+
+/**
+ * 점 p를 polyline 위 최근접 지점으로 스냅하고,
+ * 시작점으로부터의 누적 거리(미터), 이탈거리(미터), 선분 bearing 을 반환.
+ *
+ * 성능: polyline 이 수천 vertex 일 때 매 샘플마다 O(N) 전탐색은 비용이 크다.
+ * 직전 `segmentIndex` 를 전달하면 그 주변 ±windowK 만 먼저 보고, 실패 시에만 full-scan 한다.
+ */
+export function snapToPolyline(
+  p: LatLng,
+  poly: LatLng[],
+  opts: SnapOptions = {},
+): SnapResult {
+  if (poly.length < 2) {
+    return {
+      snapped: poly[0] ?? p,
+      progressMeters: 0,
+      totalMeters: 0,
+      offRouteMeters: poly[0] ? haversineMeters(p, poly[0]) : 0,
+      segmentIndex: 0,
+      bearingDeg: 0,
+    };
+  }
+  const cum = cumulativeDistancesMeters(poly);
+  const totalMeters = cum[cum.length - 1];
+
+  const windowK = opts.windowK ?? 50;
+  const fallbackM = opts.offRouteFallbackM ?? 100;
+
+  let best: ReturnType<typeof snapInRange> | null = null;
+
+  if (
+    typeof opts.fromSegmentIndex === 'number' &&
+    opts.fromSegmentIndex >= 0 &&
+    opts.fromSegmentIndex < poly.length - 1
+  ) {
+    const lo = Math.max(0, opts.fromSegmentIndex - windowK);
+    const hi = Math.min(poly.length - 1, opts.fromSegmentIndex + windowK + 1);
+    const local = snapInRange(p, poly, cum, lo, hi);
+    if (local.dist <= fallbackM) {
+      best = local;
+    }
+  }
+
+  if (!best) {
+    best = snapInRange(p, poly, cum, 0, poly.length - 1);
+  }
+
+  return {
+    snapped: best.snapped,
+    progressMeters: best.progress,
     totalMeters,
-    offRouteMeters: bestDist,
-    segmentIndex: bestSegIdx,
+    offRouteMeters: best.dist,
+    segmentIndex: best.segIdx,
+    bearingDeg: best.bearing,
   };
 }

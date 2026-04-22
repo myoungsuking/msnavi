@@ -29,6 +29,7 @@ export const getCourseSegments = asyncHandler(async (req: Request, res: Response
 export const getCoursePois = asyncHandler(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   const type = typeof req.query.type === 'string' ? req.query.type : undefined;
-  const items = await svc.listCoursePois(id, type);
+  // 공간 쿼리 기반 - 코스 polyline 50m 이내 POI. 경계 공유 POI 도 노출됨.
+  const items = await svc.listPoisAlongCourse(id, type, 50);
   res.json({ items });
 });

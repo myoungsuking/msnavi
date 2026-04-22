@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/validate';
-import { postProgress, progressBodySchema } from '../controllers/navigation.controller';
+import {
+  postProgress,
+  progressBodySchema,
+} from '../controllers/navigation.controller';
 
 const router = Router();
 

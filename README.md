@@ -29,8 +29,8 @@ cp .env.example .env
 # KAKAO_REST_API_KEY 등 필요한 값 채우기
 ```
 
-**테스트 IP/CORS**: 팀 테스트 IP `172.22.0.148` 기준으로 기본 허용 origin이 설정되어 있습니다.
-다른 환경에서는 `CORS_ORIGINS` 값을 덮어쓰면 됩니다.
+**운영 도메인 / CORS**: 운영은 `https://msnavi.msking.co.kr` (Cloudflare → 테스트 서버 `172.22.0.148:4000`) 를 통해 접근합니다.
+CORS 는 운영 도메인 + 사내 IP(`172.22.0.148`) + `localhost` 를 기본 허용하도록 설정되어 있으며, 다른 환경에서는 `CORS_ORIGINS` 값을 덮어쓰면 됩니다.
 
 ### 2) 인프라 기동 (Postgres + Redis)
 
@@ -48,7 +48,7 @@ docker compose up -d
 ```bash
 cd apps/api
 npm install
-npm run dev   # http://172.22.0.148:4000 (API_HOST/API_PORT 로 변경 가능)
+npm run dev   # 로컬: http://localhost:4000 / 사내: http://172.22.0.148:4000 / 운영: https://msnavi.msking.co.kr (Cloudflare)
 ```
 
 ### 3-1) 공식 데이터 적재 (선택)
@@ -74,20 +74,22 @@ npm run start       # Expo 개발 서버
 ```
 
 > 모바일에서 API를 호출하려면 `.env`의 `EXPO_PUBLIC_API_BASE_URL`을 기기가 접근 가능한
-> IP(예: `http://172.22.0.148:4000`)로 지정해야 합니다.
-> `localhost` 는 실제 디바이스에서 동작하지 않습니다.
+> 주소로 지정해야 합니다.
+> - 외부망 테스트/배포: `https://msnavi.msking.co.kr` (Cloudflare, 기본값)
+> - 사내 LAN 테스트: `http://172.22.0.148:4000`
+> - `localhost` 는 실제 디바이스에서 동작하지 않습니다.
 
 ## 환경변수 요약
 
 | 변수 | 설명 | 기본값 |
 | --- | --- | --- |
 | `API_HOST` / `API_PORT` | API 바인딩 | `0.0.0.0` / `4000` |
-| `CORS_ORIGINS` | 허용 origin 목록(콤마) | `http://172.22.0.148:*` 등 |
+| `CORS_ORIGINS` | 허용 origin 목록(콤마) | `https://msnavi.msking.co.kr, http://172.22.0.148:*, http://localhost:*` |
 | `POSTGRES_*` | Postgres 접속 정보 | `localhost:5432/msnavi` |
 | `REDIS_ENABLED` | Redis 캐시 on/off | `true` |
 | `REDIS_*` | Redis 접속 정보 | `localhost:6379` |
 | `KAKAO_REST_API_KEY` | 카카오 로컬 API 키 | (필수) |
-| `EXPO_PUBLIC_API_BASE_URL` | 모바일 → API base URL | `http://172.22.0.148:4000` |
+| `EXPO_PUBLIC_API_BASE_URL` | 모바일 → API base URL | `https://msnavi.msking.co.kr` |
 
 ## 스크립트 (루트 기준)
 
@@ -111,6 +113,65 @@ npm run start       # Expo 개발 서버
 - `GET /api/nearby?lat=&lng=&type=&radius=&source=`
 - `POST /api/navigation/progress`
 - `POST /api/rides/start` · `POST /api/rides/:id/track` · `POST /api/rides/:id/end` · `GET /api/rides/:id`
+
+## 외부 노출 (Cloudflare Tunnel)
+
+테스트 서버(`172.22.0.148`)의 API 를 **외부 인터넷에서 `https://msnavi.msking.co.kr`** 으로 접근할 수 있게
+**Cloudflare Tunnel (`cloudflared`)** 을 사용합니다.
+
+### 구조
+
+```
+모바일 앱 / 브라우저
+      │  (HTTPS)
+      ▼
+https://msnavi.msking.co.kr       ← Cloudflare 엣지 (TLS 종단)
+      │  (QUIC, outbound-only 터널)
+      ▼
+cloudflared (systemd 서비스, 테스트 서버 내부에서 구동)
+      │  (HTTP, 평문, 내부망)
+      ▼
+http://172.22.0.148:4000/api/*  ← Express API
+```
+
+- 방화벽에 인바운드 포트를 열 필요가 없습니다 (cloudflared 가 Cloudflare 엣지로 아웃바운드 연결).
+- 라우팅은 Cloudflare 대시보드 → **Networking → Tunnels → Public Hostnames** 에서 관리.
+- 터널 ID: `a822704c-2c3c-488e-95e0-07b4d9285b90` (msnavi 전용, crm 등 타 서비스와 분리)
+
+### 서버 (172.22.0.148) 운영 명령
+
+cloudflared 는 systemd 서비스로 등록되어 있어 **재부팅 시 자동 시작**, **SSH 세션과 무관하게 상시 구동** 됩니다.
+
+```bash
+sudo systemctl status cloudflared      # 상태 확인
+sudo systemctl restart cloudflared     # 재시작
+sudo journalctl -u cloudflared -f      # 실시간 로그
+sudo systemctl disable cloudflared     # (비상시) 자동시작 해제
+```
+
+### 최초 설치 (참고)
+
+서버에 cloudflared 가 설치돼 있지 않을 때만 실행.
+
+```bash
+# 1) cloudflared 바이너리 설치 (Rocky Linux 9 / RHEL 계열)
+sudo curl -L --output /tmp/cloudflared.rpm \
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-x86_64.rpm
+sudo rpm -ivh /tmp/cloudflared.rpm
+
+# 2) 대시보드에서 발급한 connector 토큰으로 systemd 서비스 등록
+sudo cloudflared service install <대시보드_connector_토큰>
+sudo systemctl enable --now cloudflared
+```
+
+### 확인 (외부 연결)
+
+```bash
+curl -s https://msnavi.msking.co.kr/api/health
+# → {"ok":true,"env":"development","db":true,"redis":true,"now":"..."}
+```
+
+---
 
 ## 배포 이력
 

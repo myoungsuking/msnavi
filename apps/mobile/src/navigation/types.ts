@@ -13,8 +13,25 @@ export type TabParamList = {
   Settings: undefined;
 };
 
+export interface NearbyDetailParam {
+  poi: {
+    id?: string | number;
+    type: string;
+    name: string;
+    address: string | null;
+    lat: number;
+    lng: number;
+    distanceM: number;
+    source?: 'db' | 'kakao';
+  };
+  myLat: number;
+  myLng: number;
+}
+
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
+  RideDetail: { rideId: number };
+  NearbyDetail: NearbyDetailParam;
 };
 
 export type TabScreenProps<T extends keyof TabParamList> = CompositeScreenProps<

@@ -828,8 +828,8 @@ NODE_ENV=development
 API_HOST=0.0.0.0
 API_PORT=4000
 
-# 테스트 서버 IP (로컬호스트가 아닌 팀 공용 IP)
-CORS_ORIGINS=http://172.22.0.148:4000,http://172.22.0.148:8081,http://172.22.0.148:19006,http://localhost:4000,http://localhost:8081,http://localhost:19006
+# 운영 도메인(Cloudflare) + 팀 공용 IP + 로컬
+CORS_ORIGINS=https://msnavi.msking.co.kr,http://172.22.0.148:4000,http://172.22.0.148:8081,http://172.22.0.148:19006,http://localhost:4000,http://localhost:8081,http://localhost:19006
 
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
@@ -843,7 +843,7 @@ REDIS_PORT=6379
 REDIS_TTL_SEC=300
 
 KAKAO_REST_API_KEY=...
-EXPO_PUBLIC_API_BASE_URL=http://172.22.0.148:4000
+EXPO_PUBLIC_API_BASE_URL=https://msnavi.msking.co.kr
 ```
 
 `.env.example`이 리포에 포함되어 있고, 실제 `.env`는 `.gitignore` 처리됨.
@@ -851,7 +851,7 @@ EXPO_PUBLIC_API_BASE_URL=http://172.22.0.148:4000
 ### 24.3 CORS 정책
 
 - `CORS_ORIGINS`에 등록된 origin만 허용 (콤마 구분)
-- 기본적으로 **팀 테스트 IP `172.22.0.148`** 의 4000/8081/19006 포트 허용
+- 기본 허용: **운영 도메인 `https://msnavi.msking.co.kr`** (Cloudflare → 172.22.0.148:4000) + **팀 테스트 IP `172.22.0.148`** 의 4000/8081/19006 포트 + `localhost`
 - origin 없는 요청(curl, 서버-서버, 헬스체크)은 통과
 - credentials 허용, preflight(`OPTIONS *`) 처리 포함
 
@@ -869,6 +869,16 @@ EXPO_PUBLIC_API_BASE_URL=http://172.22.0.148:4000
 - Remote: `https://github.com/myoungsuking/msnavi.git`
 - 기본 브랜치: `main`
 - 토큰/민감정보는 커밋되지 않으며 `.gitignore`에 `git_info`, `.env` 등록됨
+
+### 24.6 외부 노출 — Cloudflare Tunnel
+
+- 공개 도메인: `https://msnavi.msking.co.kr` (Cloudflare Proxy)
+- 오리진: `http://172.22.0.148:4000` (내부망, 방화벽 인바운드 개방 불필요)
+- 터널 ID: `a822704c-2c3c-488e-95e0-07b4d9285b90` (msnavi 전용, crm 등 타 서비스와 분리)
+- 구동 방식: 테스트 서버 내부에서 `cloudflared.service` (systemd, `enabled`)
+  - 재부팅 자동 시작 / SSH 세션과 무관하게 상시 구동
+- 라우팅 관리: Cloudflare Zero Trust → Networks → Tunnels → Public Hostnames
+- 상세/운영 절차: [`README.md#외부-노출-cloudflare-tunnel`](../README.md#외부-노출-cloudflare-tunnel), [`docs/deployments.md`](./deployments.md#외부-노출--cloudflare-tunnel)
 
 ---
 
@@ -943,7 +953,7 @@ npm run import:official       # data/raw/*.csv 읽어 DB 적재 (upsert)
 ## 26. 배포 이력 관리 (GitHub Deployments)
 
 ### 26.1 개요
-- 실제 배포 대상: 테스트 서버 1대 `http://172.22.0.148:4000` (environment = `test`)
+- 실제 배포 대상: 테스트 서버 1대 `https://msnavi.msking.co.kr` (Cloudflare → `172.22.0.148:4000`, environment = `test`)
 - 워크플로우: `.github/workflows/deploy-test.yml`
 - 방법: GitHub Actions 내에서 **GitHub Deployments API** 를 직접 호출해
   각 배포 시도의 `in_progress → success/failure` 상태를 기록

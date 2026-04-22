@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: http://172.22.0.148:4000
+      url: https://msnavi.msking.co.kr
 
     steps:
       - name: Checkout
@@ -76,7 +76,7 @@ jobs:
               deployment_id: deployment.id,
               state: 'in_progress',
               log_url: runUrl,
-              environment_url: 'http://172.22.0.148:4000',
+              environment_url: 'https://msnavi.msking.co.kr',
               description: 'Build & deploy in progress',
             });
             core.setOutput('deployment_id', deployment.id);
@@ -107,7 +107,7 @@ jobs:
         run: |
           echo "::notice title=Deploy placeholder::실제 배포 스크립트 미설정 상태"
           echo "ref=${{ github.sha }}"
-          echo "env=test / http://172.22.0.148:4000"
+          echo "env=test / https://msnavi.msking.co.kr (Cloudflare → 172.22.0.148:4000)"
           echo "deployment_id=${{ steps.deployment.outputs.deployment_id }}"
 
       # -----------------------------------------------------------
@@ -125,7 +125,7 @@ jobs:
               deployment_id: ${{ steps.deployment.outputs.deployment_id }},
               state: 'success',
               log_url: runUrl,
-              environment_url: 'http://172.22.0.148:4000',
+              environment_url: 'https://msnavi.msking.co.kr',
               description: 'Deployed to test successfully',
             });
 

@@ -6,7 +6,9 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/splash.png",
       "backgroundColor": "#ffffff",
       "resizeMode": "contain"
     },
@@ -20,6 +22,10 @@
     },
     "android": {
       "package": "com.msnavi.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -43,19 +49,12 @@
         }
       ],
       [
-        "expo-build-properties",
+        "expo-splash-screen",
         {
-          "android": {
-            "extraMavenRepos": [
-              "https://repository.map.naver.com/archive/maven"
-            ]
-          }
-        }
-      ],
-      [
-        "@mj-studio/react-native-naver-map",
-        {
-          "client_id": "xznupp27b3"
+          "image": "./assets/splash.png",
+          "backgroundColor": "#ffffff",
+          "resizeMode": "contain",
+          "imageWidth": 260
         }
       ]
     ]

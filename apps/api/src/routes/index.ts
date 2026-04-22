@@ -3,6 +3,8 @@ import courseRoutes from './course.routes';
 import nearbyRoutes from './nearby.routes';
 import navigationRoutes from './navigation.routes';
 import rideRoutes from './ride.routes';
+import mapRoutes from './map.routes';
+import adminRoutes from './admin.routes';
 import { pingDb } from '../db/pool';
 import { pingRedis } from '../db/redis';
 import { env } from '../config/env';
@@ -24,5 +26,7 @@ router.use('/courses', courseRoutes);
 router.use('/nearby', nearbyRoutes);
 router.use('/navigation', navigationRoutes);
 router.use('/rides', rideRoutes);
+router.use('/map', mapRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

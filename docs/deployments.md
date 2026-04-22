@@ -4,7 +4,7 @@
 레포 상단 **`Environments`** 패널 / **`Deployments`** 탭에서 시간순으로 확인 가능하며,
 각 이력은 해당 Actions 실행 로그와 환경 URL 에 1:1 로 연결됩니다.
 
-> 대상 환경: `test` (http://172.22.0.148:4000)
+> 대상 환경: `test` (https://msnavi.msking.co.kr, Cloudflare → 172.22.0.148:4000)
 > 워크플로우: [`.github/workflows/deploy-test.yml`](../.github/workflows/deploy-test.yml)
 
 ---
@@ -55,9 +55,49 @@ state=success       state=failure
 - ✅ 배포 이력 기록 (GitHub Deployments 탭)
 - ✅ typecheck / build 검증
 - ✅ `test` 환경으로 고정 (staging/prod 분리는 추후 도입)
+- ✅ **외부 노출: Cloudflare Tunnel** (`https://msnavi.msking.co.kr` → `http://172.22.0.148:4000`)
 - ⏳ **실제 원격 배포 스크립트는 placeholder 상태**
   - `Deploy step (placeholder)` 만 실행되어 항상 성공으로 기록됨
   - 실제 SSH 배포가 필요해지면 아래 "실제 배포 연결" 참조
+
+---
+
+## 외부 노출 — Cloudflare Tunnel
+
+운영/외부 접근은 Cloudflare Tunnel 로 제공됩니다. 자세한 동작 구조/설치 절차는
+[`README.md`](../README.md#외부-노출-cloudflare-tunnel) 참고. 이 문서에서는 운영 팁만 메모합니다.
+
+| 항목 | 값 |
+| --- | --- |
+| 공개 도메인 | `https://msnavi.msking.co.kr` |
+| 오리진 (터널 내부) | `http://172.22.0.148:4000` |
+| 터널 ID | `a822704c-2c3c-488e-95e0-07b4d9285b90` (msnavi 전용) |
+| 호스트 서비스 | `cloudflared.service` (systemd, `enable`=on) |
+
+```bash
+# 서버에서 상태/로그 확인
+sudo systemctl status cloudflared
+sudo journalctl -u cloudflared -f
+
+# 외부에서 헬스체크
+curl -s https://msnavi.msking.co.kr/api/health
+```
+
+**장애 시 진단 순서**
+
+1. `curl http://localhost:4000/api/health` — API 서버 생존 확인
+2. `systemctl status cloudflared` — 터널 프로세스 확인
+3. `cloudflared_tunnel_total_requests` 값 체크 (`curl http://127.0.0.1:20241/metrics`)
+   - 0 이면 요청이 Cloudflare 엣지에서 막힌 것 → 대시보드 Access/WAF/Rules 점검
+   - 증가한다면 요청은 터널까지 도달 중 → 오리진/앱 문제
+
+**운영 주의사항 — 터널은 반드시 서비스 단위로 분리**
+
+- 기존에 운영 중인 다른 Cloudflare Tunnel (예: `msking-tunnel` 이 crm 서비스용) 의
+  **토큰을 공유해서 추가 connector 를 붙이면 HA 구성이 되면서** 트래픽이 새 connector 로도
+  라우팅됩니다. 이때 새 서버에 해당 서비스 오리진이 없으면 502 로 옆 서비스까지 장애.
+- msnavi 는 **msnavi 전용 터널** (`a822704c-2c3c-488e-95e0-07b4d9285b90`) 로 분리 구성됨.
+- 신규 서비스 터널을 만들 때는 **별도 터널 생성 → 해당 서버 전용 토큰 발급** 원칙을 지킬 것.
 
 ---
 
@@ -129,7 +169,7 @@ gh api repos/myoungsuking/msnavi/deployments \
 # 반환된 id 로 상태 업데이트
 gh api repos/myoungsuking/msnavi/deployments/<id>/statuses \
   -f state=success \
-  -f environment_url=http://172.22.0.148:4000 \
+  -f environment_url=https://msnavi.msking.co.kr \
   -f description="manual deploy by <name>"
 ```
 

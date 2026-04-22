@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../theme';
+import { formatDistance, turnArrow, turnLabelKo, type TurnDirection } from '../utils/geo';
 
 interface Props {
   currentSpeedKmh?: number;
@@ -10,6 +11,8 @@ interface Props {
   nextPoiName?: string | null;
   nextPoiDistanceKm?: number | null;
   offRoute?: boolean;
+  /** 다음 턴 정보. null 이면 표시 안 함 */
+  nextTurn?: { direction: TurnDirection; distanceM: number } | null;
 }
 
 function fmtTime(iso?: string | null): string {
@@ -28,9 +31,46 @@ export function RideStatsPanel({
   nextPoiName,
   nextPoiDistanceKm,
   offRoute,
+  nextTurn,
 }: Props) {
   return (
     <View style={styles.wrap}>
+      {nextTurn && (
+        <View
+          style={[
+            styles.turnBanner,
+            nextTurn.distanceM <= 60 && styles.turnBannerImminent,
+          ]}
+        >
+          <Text
+            style={[
+              styles.turnArrow,
+              nextTurn.distanceM <= 60 && styles.turnTextImminent,
+            ]}
+          >
+            {turnArrow(nextTurn.direction)}
+          </Text>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.turnDistance,
+                nextTurn.distanceM <= 60 && styles.turnTextImminent,
+              ]}
+            >
+              {nextTurn.distanceM <= 20 ? '지금' : `${formatDistance(nextTurn.distanceM)} 앞`}
+            </Text>
+            <Text
+              style={[
+                styles.turnLabel,
+                nextTurn.distanceM <= 60 && styles.turnTextImminent,
+              ]}
+            >
+              {turnLabelKo(nextTurn.direction)}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {offRoute && (
         <View style={styles.offRoute}>
           <Text style={styles.offRouteText}>경로 이탈</Text>
@@ -124,5 +164,37 @@ const styles = StyleSheet.create({
     ...typography.bodyBold,
     color: colors.text,
     marginTop: 2,
+  },
+  turnBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 8,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  turnBannerImminent: {
+    backgroundColor: colors.bgInverse,
+    borderColor: colors.bgInverse,
+  },
+  turnArrow: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.text,
+    lineHeight: 40,
+  },
+  turnDistance: {
+    ...typography.h2,
+    color: colors.text,
+  },
+  turnLabel: {
+    ...typography.bodyBold,
+    color: colors.textMuted,
+  },
+  turnTextImminent: {
+    color: colors.textInverse,
   },
 });

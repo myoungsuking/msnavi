@@ -6,6 +6,8 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { RideScreen } from '../screens/RideScreen';
 import { NearbyScreen } from '../screens/NearbyScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
+import { RideDetailScreen } from '../screens/RideDetailScreen';
+import { NearbyDetailScreen } from '../screens/NearbyDetailScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { CustomTabBar } from './CustomTabBar';
 import type { RootStackParamList, TabParamList } from './types';
@@ -33,6 +35,16 @@ export function RootNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen
+          name="RideDetail"
+          component={RideDetailScreen}
+          options={{ headerShown: true, title: '주행 상세' }}
+        />
+        <Stack.Screen
+          name="NearbyDetail"
+          component={NearbyDetailScreen}
+          options={{ headerShown: true, title: '위치 보기' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

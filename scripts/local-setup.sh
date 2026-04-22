@@ -130,7 +130,7 @@ for k, v in [
     ('REDIS_URL',    'redis://localhost:6379'),
     ('PORT',         '4000'),
     ('HOST',         '0.0.0.0'),
-    ('CORS_ORIGINS', 'http://172.22.0.148:4000,http://localhost:4000,http://localhost:8081'),
+    ('CORS_ORIGINS', 'https://msnavi.msking.co.kr,http://172.22.0.148:4000,http://localhost:4000,http://localhost:8081'),
     ('NODE_ENV',     'development'),
 ]:
     put(k, v)

@@ -1,6 +1,9 @@
 # msnavi API 명세서 (v0.1)
 
-- Base URL (개발): `http://172.22.0.148:4000/api`
+- Base URL
+  - 운영/외부: `https://msnavi.msking.co.kr/api` (Cloudflare → 172.22.0.148:4000)
+  - 사내 LAN: `http://172.22.0.148:4000/api`
+  - 로컬: `http://localhost:4000/api`
 - 공통 응답: JSON
 - 인증: **현 단계 MVP에서는 미적용** (차후 JWT/세션 도입 예정)
 - 에러 포맷
@@ -191,7 +194,7 @@ GPS 샘플 일괄 업로드(최대 500개).
 
 `.env` 의 `CORS_ORIGINS` 에 나열된 origin만 허용.
 모바일/브라우저에서 접근 시 반드시 허용 목록에 추가.
-기본값 예: `http://172.22.0.148:4000, http://172.22.0.148:8081, http://172.22.0.148:19006, http://localhost:*`.
+기본값 예: `https://msnavi.msking.co.kr, http://172.22.0.148:4000, http://172.22.0.148:8081, http://172.22.0.148:19006, http://localhost:*`.
 
 ## 에러 코드
 
